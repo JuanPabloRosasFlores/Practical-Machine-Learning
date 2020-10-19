@@ -1,0 +1,79 @@
+---
+title: "ProyectoFinal"
+author: "Juan Pablo Rosas"
+date: "8/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Preprocessing and selection of the variables included
+
+```{r}
+setwd("C:/Users/PavilionX360/Desktop/Practical Mchine Learning")
+
+training<-read.csv("pml-training.csv")
+testing<-read.csv("pml-testing.csv")
+
+library(caret)
+library(corrplot)
+
+inTrain<-createDataPartition(training$classe,p=0.7,list=FALSE)
+train<-training[inTrain,]
+test<-training[-inTrain,]
+  
+
+out<-nearZeroVar(train)
+
+
+train<-train[,-out]
+test<-test[,-out]
+
+train<-train[,colSums(is.na(train))<nrow(train)*0.1]
+
+train<-train[,-(1:5)]
+test<-test[,-(1:5)]
+
+length(names(train))
+
+
+```
+
+# Prediction Model Selection 
+
+## Generalized Boosted Model
+
+```{r}
+set.seed(13908)
+control<-trainControl(method = "repeatedcv",number=5,repeats = 1,verboseIter = FALSE)
+modelGBM<-train(classe~.,data=train,trControl=control,method="gbm",verbose=FALSE)
+modelGBM$finalModel
+#
+predictGBM<-predict(modelGBM,test)
+confMat<-confusionMatrix(predictGBM,test$classe)
+confMat
+
+```
+
+## Random Forest
+
+```{r}
+control<-trainControl(method="cv",number=3,verboseIter=FALSE)
+modelRF<-train(classe~.,data=train,method="rf",trControl=control)
+modelRF$finalModel
+
+#
+predictRF<-predict(modelRF,test)
+confMatRF<-confusionMatrix(predictRF,test$classe)
+confMatRF
+```
+
+## Predicting
+
+```{r}
+predictRF<-predict(modelRF, testing)
+predictRF
+```
+
